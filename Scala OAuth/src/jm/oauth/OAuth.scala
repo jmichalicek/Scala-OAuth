@@ -19,6 +19,7 @@ object OAuth {
   val GET = "GET"
   val OOB = "oob"
   val HMAC_SHA1 = "HMAC-SHA1"
+  val PLAINTEXT = "Plaintext"
 }
 
 class OAuth(val requestMethod: String, val consumerSecret: String, val consumerKey: String, val signatureMethod: String) {
@@ -44,7 +45,8 @@ class OAuth(val requestMethod: String, val consumerSecret: String, val consumerK
         "oauth_nonce" -> nonce)
         
     //TODO: Create factory for these as it could be any of 3
-    val signer = new HmacSha1()
+    //val signer = new HmacSha1()
+    val signer = this.SignatureFactory()
     val signature = signer.createSignature(this.consumerSecret, null, method, url, parameters)
 
     //Now make request signed with signature to get the actual request token
@@ -70,6 +72,13 @@ class OAuth(val requestMethod: String, val consumerSecret: String, val consumerK
     	return (values(0),values(1),values(2))
     } else {
       throw new Exception(responseBody)
+    }
+  }
+  
+  def SignatureFactory(): jm.oauth.MessageSigner = {
+    this.signatureMethod match {
+      case x if x == OAuth.HMAC_SHA1 => return new HmacSha1()
+      case x if x == OAuth.PLAINTEXT => return new Plaintext()
     }
   }
 }

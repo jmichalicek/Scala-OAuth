@@ -1,5 +1,6 @@
 package jm.oauth.messagesigner
 
+import jm.oauth.MessageSigner
 import java.net.URLEncoder
 import org.apache.commons.codec.digest.DigestUtils //nicer implementation to work with than java.security.MessageDigest
 import org.apache.commons.codec.binary.Hex
@@ -8,10 +9,10 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import scala.collection.immutable.SortedMap
 
-class HmacSha1 extends jm.oauth.MessageSigner{
+class HmacSha1 extends MessageSigner{
   
 	//May compact the url, method, and params to a single object
-	def createSignature(key: String, token: String, method: String, url: String, requestParams: Map[String, String]): String = {
+	override def createSignature(key: String, token: String, method: String, url: String, requestParams: Map[String, String]): String = {
 	    //First create a SortedMap which is sorted on the key from our Map
 		//and then feeds that into map() to combine key and value, then into reduce to join each k,v pair with an &
 		val sorted = SortedMap(requestParams.toList:_*)
