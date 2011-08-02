@@ -1,4 +1,4 @@
-package httpTest
+package jm.oauth
 
 import java.net.URLEncoder
 import java.net.URLDecoder
