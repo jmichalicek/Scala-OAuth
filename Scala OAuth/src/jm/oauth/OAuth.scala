@@ -1,6 +1,7 @@
 package httpTest
 
 import java.net.URLEncoder
+import java.net.URLDecoder
 import org.apache.commons.codec.digest.DigestUtils //nicer implementation to work with than java.security.MessageDigest
 
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -33,23 +34,22 @@ class OAuth(val requestMethod: String, val consumerSecret: String, val consumerK
     return generateNonce(salt.getBytes())
   }
   /**
-   * Returns a tuple3 with the oauth_token, oauth_token_secret, and oauth_callback_confirmed values
+   * Returns a Map() with the key -> value pairs returned by the server
    * 
-   * @return (oauth_token, oauth_token_secret, oauth_callback_confirmed)
+   * @return Map[String,String]
    */
-  def generateRequestToken(method: String, url: String, callbackUrl: String): Tuple3[String,String,String] = {
+  def generateRequestToken(url: String, callbackUrl: String): Map[String,String] = {
     val epoch = System.currentTimeMillis()/1000;
     val nonce = generateNonce(consumerKey + epoch)
     val parameters = Map("oauth_callback" -> callbackUrl,"oauth_consumer_key" -> consumerKey,
         "oauth_signature_method" -> this.signatureMethod, "oauth_timestamp" -> epoch.toString(), "oauth_version" -> "1.0",
         "oauth_nonce" -> nonce)
-        
-    //TODO: Create factory for these as it could be any of 3
-    //val signer = new HmacSha1()
+
     val signer = this.SignatureFactory()
-    val signature = signer.createSignature(this.consumerSecret, null, method, url, parameters)
+    val signature = signer.createSignature(this.consumerSecret, null, this.requestMethod, url, parameters)
 
     //Now make request signed with signature to get the actual request token
+    //TODO: Add factory with objects that do GET or POST and put the request together properly
     val tokenRequest = new HttpPost(url)
 
     val authHeader = "OAuth realm=\"\"," + 
@@ -64,15 +64,60 @@ class OAuth(val requestMethod: String, val consumerSecret: String, val consumerK
     tokenRequest.setHeader("Authorization", authHeader)
     
     val response = client.execute(tokenRequest)
-    //There is currently an assumption that this worked!
-    //Need to throw an exception if this did not work
     val responseBody = EntityUtils.toString(response.getEntity())
+    
     if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-    	val values = responseBody.split(('&')).map(current => current.split('=')(1))
-    	return (values(0),values(1),values(2))
+      //Different OAuth providers return different values and not necessarily in the same order
+      //so convert that returned string to a map of key -> value pairs
+    	val values = responseBody.split(('&')).foldLeft(Map[String,String]())
+    			{(m,current) => m + (URLDecoder.decode(current.split('=')(0)) -> URLDecoder.decode(current.split('=')(1))) }
+    	return values
     } else {
       throw new Exception(responseBody)
     }
+  }
+  
+  def generateAccessToken(url: String, tokenSecret: String, oauthToken: String, oauthVerifier: String): Map[String,String] = {
+    val epoch = System.currentTimeMillis()/1000;
+    val nonce = generateNonce(consumerKey + epoch)
+    val parameters = Map("oauth_consumer_key" -> consumerKey, "oauth_nonce" -> nonce, 
+        "oauth_signature_method" -> this.signatureMethod, "oauth_token" -> oauthToken,
+        "oauth_timestamp" -> epoch.toString(),
+        "oauth_verifier" -> oauthVerifier, "oauth_version" -> "1.0")
+
+    val signer = this.SignatureFactory()
+    val signature = signer.createSignature(this.consumerSecret, tokenSecret, this.requestMethod, url, parameters)
+    println("access token signature is: " + signature)
+    
+    //Now make request signed with signature to get the actual request token
+    //TODO: Add factory with objects that do GET or POST and put the request together properly
+    val tokenRequest = new HttpPost(url)
+    
+    val authHeader = "OAuth realm=\"\"," +
+    	"oauth_consumer_key=\"" + URLEncoder.encode(consumerKey) + "\"," +
+    	"oauth_nonce=\"" + nonce + "\"," + 
+    	"oauth_signature_method=\"" + this.signatureMethod + "\"," +
+    	"oauth_token=\"" + URLEncoder.encode(oauthToken) + "\"," +
+    	"oauth_timestamp=\"" + epoch + "\"," +
+    	"oauth_verifier=\"" + URLEncoder.encode(oauthVerifier) + "\"," +
+        "oauth_signature=\"" + URLEncoder.encode(signature) + "\"," +
+        "oauth_version=\"1.0\""
+        
+    tokenRequest.setHeader("Authorization", authHeader)
+    
+    val response = client.execute(tokenRequest)
+    val responseBody = EntityUtils.toString(response.getEntity())
+    
+    if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+      //Different OAuth providers return different values and not necessarily in the same order
+      //so convert that returned string to a map of key -> value pairs
+    	val values = responseBody.split(('&')).foldLeft(Map[String,String]())
+    			{(m,current) => m + (URLDecoder.decode(current.split('=')(0)) -> URLDecoder.decode(current.split('=')(1))) }
+    	return values
+    } else {
+      throw new Exception(responseBody)
+    }
+    
   }
   
   def SignatureFactory(): jm.oauth.MessageSigner = {

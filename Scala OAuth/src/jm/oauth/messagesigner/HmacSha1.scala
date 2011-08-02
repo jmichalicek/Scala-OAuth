@@ -36,8 +36,5 @@ class HmacSha1 extends MessageSigner{
 	  mac.init(signingKey);
 	  val rawHmac = mac.doFinal(value.getBytes());
 	  return new String(rawHmac)
-    //This is from an example, but it never worked
-    //val hexBytes = new Hex().encode(rawHmac)
-    //return new String(hexBytes, "UTF-8");
   }
 }
