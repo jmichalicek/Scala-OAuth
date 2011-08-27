@@ -34,6 +34,7 @@ class Requester(val signatureMethod: String, val consumerSecret: String, val con
   val client = new DefaultHttpClient()
   
   // What about plain old postdata with no name?
+  // I think that is not specified as part of the OAuth spec
   /**
    * Perform an OAuth signed HTTP POST
    * 
