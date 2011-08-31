@@ -44,7 +44,7 @@ class Requester(val signatureMethod: String, val consumerSecret: String, val con
   
   //What if we need to return a non-string, like an image?
   //may be best to return something more generic like the request object
-  def post(url: String, postParams: Map[String, String]): String = {
+  def post(url: String, postParams: Map[String, String]): Array[Byte] = {
     val epoch = System.currentTimeMillis()/1000;
     val nonce = OAuth.generateNonce(consumerKey + epoch)
     
@@ -70,7 +70,6 @@ class Requester(val signatureMethod: String, val consumerSecret: String, val con
         
     request.addHeader("Authorization", authHeader)
 
-    println("auth header: " + authHeader)
     //Twitter examples seem to want these percent encoded, not x-www-form-urlencoded even though it's a POST parameter
     //This actually x-www-form-urlencodes, and it seems to work    
     val pList = new java.util.ArrayList[BasicNameValuePair]()
@@ -80,8 +79,9 @@ class Requester(val signatureMethod: String, val consumerSecret: String, val con
     //request.setEntity(new StringEntity("status=" + URLEncoder.encode(postParams("status")))) //Ends up in postdata. Could be useful later
     
     val response = client.execute(request)
-    //Can OAuth server return a non-string value? Like an image?
-    val responseBody = EntityUtils.toString(response.getEntity())
+    //Return a byte array because this could be anything.
+    //It's likely a string, but it's really easy to convert byte arrays to strings
+    val responseBody = EntityUtils.toByteArray(response.getEntity())
 
     return responseBody
   }
@@ -92,7 +92,7 @@ class Requester(val signatureMethod: String, val consumerSecret: String, val con
    * @param url String - The URL to GET without querystring parameters
    * @param getParams Map[String, String]() - Map of querystring parameter names and values
    */
-  def get(url: String, getParams: Map[String, String]): String = {
+  def get(url: String, getParams: Map[String, String]): Array[Byte] = {
     val epoch = System.currentTimeMillis()/1000;
     val nonce = OAuth.generateNonce(consumerKey + epoch)
     
@@ -124,9 +124,9 @@ class Requester(val signatureMethod: String, val consumerSecret: String, val con
     request.addHeader("Authorization", authHeader)
 
     val response = client.execute(request)
-    //Can OAuth server return a non-string value? Like an image?
-    val responseBody = EntityUtils.toString(response.getEntity())
-    
+    //Return a byte array because this could be anything.
+    //It's likely a string, but it's really easy to convert byte arrays to strings
+    val responseBody = EntityUtils.toByteArray(response.getEntity())
     return responseBody
   }
   
