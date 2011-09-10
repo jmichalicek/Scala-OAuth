@@ -5,7 +5,7 @@ import jm.oauth.messagesigner._
 
 trait MessageSigner {
   def createSignature(key: String, token: String, method: String, url: String, requestParams: Map[String, String]): String = {
-    //Should throw an exception as if we hit this, then it's not really implmented
+    //Should throw an exception as if we hit this, then it's not really implemented
     return null
   }
 
