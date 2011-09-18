@@ -1,0 +1,45 @@
+Scala OAuth is a simple OAuth client library written in Scala.  The focus is on
+simplicity for common tasks moreso than supporting everything you might ever
+want to do with OAuth.
+
+Use it, clone it and continue development, etc. as you like within the bounds
+of the license.  New requests to pull patches may or may not ever get
+completed.  I enjoy developing new things and learning from them for a hobby,
+not supporting them afterwards, so I'll have moved on to new projects.
+I wanted to put this code out here so that it is easily accessible for anyone
+who might be able to use it, though.
+
+Thanks for taking a look and I hope you find it useful.
+
+Authors:
+Justin Michalicek
+
+Usage Example:
+
+import jm.oauth.OAuth
+import jm.oauth.Requester
+
+val oauthApiUrl = TWITTER_REQUEST_TOKEN_URL
+val oauthConsumerKey = TWITTER_CONSUMER_KEY
+val oauthConsumerSecret = TWITTER_CONSUMER_SECRET
+
+//Getting the request token
+val oauth = new OAuth(OAuth.POST, oauthConsumerSecret, oauthConsumerKey, OAuth.HMAC_SHA1)
+val requestToken = oauth.generateRequestToken(oauthApiUrl, OAuth.OOB)
+//careful, different OAuth services return slightly different name/value pairs.
+println("request_token is " + requestToken)
+println(requestToken("oauth_token_secret"))
+
+//Getting the access token
+val oauth = new OAuth(OAuth.POST, oauthConsumerSecret, oauthConsumerKey, OAuth.HMAC_SHA1)
+val requestToken = oauth.generateRequestToken(oauth_api_url, OAuth.OOB)
+println("request_token is " + requestToken)
+println(requestToken("oauth_token_secret"))
+
+//Make a request - posting an updated to Twitter here
+val requester = new Requester(OAuth.HMAC_SHA1, TWITTER_CONSUMER_SECRET,
+    TWITTER_CONSUMER_KEY, TWITTER_AUTHORIZED_TOKEN, TWITTER_AUTHORIZED_TOKEN_SECRET)
+
+val postMessage = Map("status" -> "another test")
+//response is a byte array
+val response = requester.post("http://api.twitter.com/1/statuses/update.json", postMessage)
