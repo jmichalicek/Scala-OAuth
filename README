@@ -30,13 +30,23 @@ val requestToken = oauth.generateRequestToken(oauthApiUrl, OAuth.OOB)
 println("request_token is " + requestToken)
 println(requestToken("oauth_token_secret"))
 
-//Getting the access token
-val oauth = new OAuth(OAuth.POST, oauthConsumerSecret, oauthConsumerKey, OAuth.HMAC_SHA1)
-val requestToken = oauth.generateRequestToken(oauth_api_url, OAuth.OOB)
-println("request_token is " + requestToken)
-println(requestToken("oauth_token_secret"))
+/Getting the access token now that you have a request token
+/*oauth.generateAccessToken(accessTokenUrl, oauth_token_secret, oauth_token, 
+ * oauth_verifier or pin) Since this example is using OOB rather than a 
+ * callback URL and Twitter, the user must now to go the url
+ * https://api.twitter.com/oauth/authorize?oauth_token=tokenrequest("oauth_token")
+ * where they will sign in and be presented with a PIN to use in the next step.
+ * If using a callback url, an identifier will be included there.
+*/
+val accessTokenRequest = oauth.generateAccessToken(accessTokenUrl,
+    tokenRequest("oauth_token_secret"), tokenRequest("oauth_token"), PIN)
 
-//Make a request - posting an updated to Twitter here
+/* Now store the authorized token and authorized token secret somewhere
+ * With twitter these will be tokenRequest("oauth_token") for authorized token
+ * and tokenRequest("oauth_token_secret") for the authorized token secret
+*/
+
+//Make a request - posting an update to Twitter here
 val requester = new Requester(OAuth.HMAC_SHA1, TWITTER_CONSUMER_SECRET,
     TWITTER_CONSUMER_KEY, TWITTER_AUTHORIZED_TOKEN, TWITTER_AUTHORIZED_TOKEN_SECRET)
 
